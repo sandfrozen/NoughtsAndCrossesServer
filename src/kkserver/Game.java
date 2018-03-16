@@ -148,6 +148,7 @@ public class Game extends UnicastRemoteObject implements GameInterface {
     public void setField(int i) throws RemoteException {
         tournament.setField(i);
         if( tournament.isWinner() ) {
+            notifyObservers();
             setNoOneTurnObservers();
             if( tournament.getActualPlayer().equals(players.get(0)) ){
                 players.get(0).informWinner("Wygrałeś !");
