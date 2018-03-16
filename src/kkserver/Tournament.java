@@ -18,20 +18,26 @@ public class Tournament {
     
     private PlayerInterface actualPlayer;
     
-    private String[] field = { " ", " ", " ", " ", " ", " ", " ", " ", " " };
+    private String[] fields = { " ", " ", " ", " ", " ", " ", " ", " ", " " };
+    private int count = 0;
     
     public void setField(int i) {
-        if( i<1 || i > 9 ) return;
+        if( i<0 || i > 8 ) return;
         
         try {
-            field[i-1] = actualPlayer.getSymbol();
+            fields[i] = actualPlayer.getSymbol();
+            ++count;
         } catch (RemoteException ex) {
             Logger.getLogger(Tournament.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
     
-    public String[] getField() {
-        return field;
+    public boolean isFreeField(int i) {
+        return fields[i] == " " ? true : false;
+    }
+    
+    public String[] getFields() {
+        return fields;
     }
     
     public void setActualPlayer(PlayerInterface p) {
@@ -42,8 +48,8 @@ public class Tournament {
         return actualPlayer;
     }
     
-    public PlayerInterface checkWin() {
-        return null;
+    public boolean isDraw()  {
+        return count == 9;
     }
     
     public boolean isWinner() throws RemoteException {
@@ -53,23 +59,23 @@ public class Tournament {
         // horizontals
         String symbol = actualPlayer.getSymbol();
         //System.out.println("ACTUAL SYMBOL: " + actualPlayer.getSymbol());
-        if( field[0].equals(symbol) && field[1].equals(symbol) && field[2].equals(symbol) ) {
+        if( fields[0].equals(symbol) && fields[1].equals(symbol) && fields[2].equals(symbol) ) {
             return true;
-        } else if( field[3].equals(symbol) && field[4].equals(symbol) && field[5].equals(symbol) ) {
+        } else if( fields[3].equals(symbol) && fields[4].equals(symbol) && fields[5].equals(symbol) ) {
             return true;
-        } else if( field[6].equals(symbol) && field[7].equals(symbol) && field[8].equals(symbol) ) {
+        } else if( fields[6].equals(symbol) && fields[7].equals(symbol) && fields[8].equals(symbol) ) {
             return true;
         } // verticals
-        else if( field[0].equals(symbol) && field[3].equals(symbol) && field[6].equals(symbol) ) {
+        else if( fields[0].equals(symbol) && fields[3].equals(symbol) && fields[6].equals(symbol) ) {
             return true;
-        } else if( field[1].equals(symbol) && field[4].equals(symbol) && field[7].equals(symbol) ) {
+        } else if( fields[1].equals(symbol) && fields[4].equals(symbol) && fields[7].equals(symbol) ) {
             return true;
-        } else if( field[2].equals(symbol) && field[5].equals(symbol) && field[8].equals(symbol) ) {
+        } else if( fields[2].equals(symbol) && fields[5].equals(symbol) && fields[8].equals(symbol) ) {
             return true;
         } // diagonals
-        else if( field[0].equals(symbol) && field[4].equals(symbol) && field[8].equals(symbol) ) {
+        else if( fields[0].equals(symbol) && fields[4].equals(symbol) && fields[8].equals(symbol) ) {
             return true;
-        } else if( field[2].equals(symbol) && field[4].equals(symbol) && field[6].equals(symbol) ) {
+        } else if( fields[2].equals(symbol) && fields[4].equals(symbol) && fields[6].equals(symbol) ) {
             return true;
         }
         return false;

@@ -17,24 +17,25 @@ import java.rmi.server.UnicastRemoteObject;
  * @author tomek.buslowski
  */
 public class Game extends UnicastRemoteObject implements GameInterface {
-    
+
     private Tournament tournament;
     public List<PlayerInterface> players = new ArrayList<>();
-    
+
     static private Game instance;
+
     static public Game getInstance() throws RemoteException {
-        if( instance == null ) {
+        if (instance == null) {
             instance = new Game();
         }
         return instance;
     }
-    
-    private Game() throws RemoteException { /* Singleton */ }
-    
+
+    private Game() throws RemoteException {
+        /* Singleton */ }
 
     @Override
     public boolean addPlayer(PlayerInterface player) throws RemoteException {
-        if( player != null && players.size() < 2 ) {
+        if (player != null && players.size() < 2) {
             players.add(player);
             System.out.println("Dodano: " + player.getName() + " " + player.hashCode());
             notifyObservers();
@@ -47,61 +48,64 @@ public class Game extends UnicastRemoteObject implements GameInterface {
 
     @Override
     public void removePlayer(PlayerInterface player) throws RemoteException {
-        if( player != null && findPlayer(player) != null ) {
+        if (player != null && findPlayer(player) != null) {
             System.out.println("Usunięto: " + player.getName() + " " + player.hashCode());
             players.remove(player);
-            if( players.size() == 1 && tournament != null){ 
-                players.get(0).informWinner("Wygrałeś walkowerem.");
-                tournament = null;
+            if (players.size() == 1 && tournament != null) {
+                players.get(0).printGameInfo("Wygrałeś walkowerem.");
+            } else {
+                notifyObservers();
             }
-            else notifyObservers();
+            tournament = null;
         }
     }
 
     @Override
     public PlayerInterface findPlayer(PlayerInterface player) throws RemoteException {
-        if( player != null ) {
+        if (player != null) {
             for (PlayerInterface p : players) {
-                if( p.equals(player) ) {
+                if (p.equals(player)) {
                     return p;
                 }
             }
         }
         return null;
     }
-    
+
     @Override
     public String getFreeSymbol() throws RemoteException {
-        if( players.isEmpty() ) {
+        if (players.isEmpty()) {
             return "O";
-        } else if( players.size() == 1 ) {
+        } else if (players.size() == 1) {
             return players.get(0).getSymbol().equals("O") ? "X" : "O";
         } else {
             return "";
         }
     }
-    
+
     public PlayerInterface getNextPlayer(PlayerInterface actualPlayer) throws RemoteException {
-        if( players.size() != 2 ) return null;
-        
+        if (players.size() != 2) {
+            return null;
+        }
+
         return players.get(0).equals(actualPlayer) ? players.get(1) : players.get(0);
     }
-    
-    
-   public void newGame() {
-       tournament = new Tournament();
-       tournament.setActualPlayer(players.get(0));
-   }
+
+    public void newGame() {
+        tournament = new Tournament();
+        tournament.setActualPlayer(players.get(0));
+    }
 
     @Override
     public String getGameInfo() throws RemoteException {
-        if( players.size() == 0 ) {
+        if (players.size() == 0) {
             return "Brak podłączonych graczy.";
-        } else if ( players.size() == 1 ) {
+        } else if (players.size() == 1) {
             return "Oczekiwanie na drugiego gracza.";
         } else {
-            if( tournament == null) return "Gracze gotowi go gry.";
-            else {
+            if (tournament == null) {
+                return "Gracze gotowi go gry.";
+            } else {
                 return "Gracze grają.";
             }
         }
@@ -109,29 +113,37 @@ public class Game extends UnicastRemoteObject implements GameInterface {
 
     @Override
     public void notifyObservers() throws RemoteException {
-        if( players.size() == 2 && tournament == null ) {
+        if (players.size() == 2 && tournament == null) {
             newGame();
         }
-        
-        for(PlayerInterface player : players) {
+
+        for (PlayerInterface player : players) {
             player.update();
         }
     }
     
+    public void sendMessageToObservers(String msg) throws RemoteException {
+        if ( players.size() == 2 ) {
+            for (PlayerInterface player : players) {
+                player.printGameInfo(msg);
+            }    
+        }
+    }
+
     public void setNoOneTurnObservers() throws RemoteException {
-        for(PlayerInterface player : players) {
+        for (PlayerInterface player : players) {
             player.setMyTurn(false);
         }
     }
-    
+
     @Override
     public boolean WAITING() throws RemoteException {
         return players.size() < 2;
     }
-    
+
     @Override
     public boolean PLAYING() throws RemoteException {
-        return players.size() == 2 && tournament!=null;
+        return players.size() == 2 && tournament != null;
     }
 
     @Override
@@ -140,29 +152,40 @@ public class Game extends UnicastRemoteObject implements GameInterface {
     }
 
     @Override
-    public String[] getField() throws RemoteException {
-        return tournament.getField();
+    public String[] getFields() throws RemoteException {
+        return tournament.getFields();
     }
 
     @Override
     public void setField(int i) throws RemoteException {
-        tournament.setField(i);
-        if( tournament.isWinner() ) {
-            notifyObservers();
-            setNoOneTurnObservers();
-            if( tournament.getActualPlayer().equals(players.get(0)) ){
-                players.get(0).informWinner("Wygrałeś !");
-                players.get(1).informWinner("Przegrałeś.");
-            } else {
-                players.get(1).informWinner("Wygrałeś !");
-                players.get(0).informWinner("Przegrałeś.");
-            }
-            tournament = null;
+        if (tournament.isFreeField(i)) {
             
-        } else {
-            setNextPlayer();
-            notifyObservers();
+            tournament.setField(i);
+            if ( tournament.isWinner() ) {
+                notifyObservers();
+                setNoOneTurnObservers();
+                if (tournament.getActualPlayer().equals(players.get(0))) {
+                    players.get(0).printGameInfo("Wygrałeś !");
+                    players.get(1).printGameInfo("Przegrałeś.");
+                } else {
+                    players.get(1).printGameInfo("Wygrałeś !");
+                    players.get(0).printGameInfo("Przegrałeś.");
+                }
+                tournament = null;
+
+            } 
+            else if ( tournament.isDraw() ) {
+                notifyObservers();
+                setNoOneTurnObservers();
+                sendMessageToObservers("Remis!");
+                tournament = null;
+            }
+            else {
+                setNextPlayer();
+                notifyObservers();
+            }
         }
+
     }
 
     @Override
@@ -170,5 +193,5 @@ public class Game extends UnicastRemoteObject implements GameInterface {
         PlayerInterface p = players.get(0).equals(tournament.getActualPlayer()) ? players.get(1) : players.get(0);
         tournament.setActualPlayer(p);
     }
-   
+
 }
