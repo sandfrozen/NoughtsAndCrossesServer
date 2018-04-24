@@ -34,7 +34,7 @@ public class KKServer {
             
             LocateRegistry.createRegistry(1099);
             GameInterface game = Game.getInstance();
-            Naming.rebind("rmi://localhost/Game", game);
+            Naming.rebind("//localhost/Game", game);
             
             System.out.println("Server jest gotowy.");
         } catch (MalformedURLException | RemoteException ex) {
